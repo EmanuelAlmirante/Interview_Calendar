@@ -15,8 +15,7 @@ public class ExceptionHandlerController {
 
     @ExceptionHandler(Exception.class)
     @ResponseBody
-    public RestError handleBusinessRuleValidationError(
-        HttpServletRequest request, HttpServletResponse response, Exception exception) {
+    public RestError handleBusinessRuleValidationError(HttpServletRequest request, HttpServletResponse response, Exception exception) {
 
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 

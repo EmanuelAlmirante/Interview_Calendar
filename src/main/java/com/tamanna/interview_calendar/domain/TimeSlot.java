@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tamanna.interview_calendar.exception.BusinessException;
 import jakarta.annotation.Nullable;
 import java.time.LocalTime;
+import java.util.Objects;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,5 +42,22 @@ public class TimeSlot {
             throw new BusinessException("Time slots must be from the beginning of the hour until the beginning of the next hour.",
                                         "From: " + from, "To: " + to);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TimeSlot timeSlot = (TimeSlot) o;
+        return Objects.equals(from, timeSlot.from) && Objects.equals(to, timeSlot.to);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(from, to);
     }
 }
