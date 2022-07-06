@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tamanna.interview_calendar.exception.BusinessException;
 import jakarta.annotation.Nullable;
 import java.time.LocalTime;
-import java.util.Objects;
 import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,6 +14,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
+@EqualsAndHashCode
 @NoArgsConstructor
 public class TimeSlot {
 
@@ -44,20 +45,20 @@ public class TimeSlot {
         }
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        TimeSlot timeSlot = (TimeSlot) o;
-        return Objects.equals(from, timeSlot.from) && Objects.equals(to, timeSlot.to);
+    public boolean overlaps(TimeSlot other) {
+        return (other.from.equals(this.from)
+            && other.to.equals(this.to))
+            || isBetween(other.from, this.from, this.to)
+            || isBetween(other.to, this.from, this.to)
+            || isBetween(this.from, other.from, other.to)
+            || isBetween(this.to, other.from, other.to);
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(from, to);
+    private boolean isBetween(LocalTime time, LocalTime from, LocalTime to) {
+        if (from.isBefore(to)) {
+            return from.isBefore(time) && time.isBefore(to);
+        } else {
+            return from.isBefore(time) || time.isBefore(to);
+        }
     }
 }

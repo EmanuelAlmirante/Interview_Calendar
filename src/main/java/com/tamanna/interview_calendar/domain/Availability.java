@@ -24,6 +24,12 @@ public class Availability {
     @JsonProperty(value = "timeslots")
     private List<TimeSlot> timeSlots;
 
+    public Availability mergeByDay(Availability availability) {
+        this.timeSlots.addAll(availability.timeSlots);
+
+        return this;
+    }
+
     @JsonCreator
     public Availability(@JsonProperty(value = "day") @Nullable LocalDate day,
                         @JsonProperty(value = "timeslots") @Nullable List<TimeSlot> timeSlots) {

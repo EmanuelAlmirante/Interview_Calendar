@@ -13,14 +13,14 @@ import lombok.Setter;
 @Setter
 @Builder
 @NoArgsConstructor
-public class ParticipantAvailability {
+public class InterviewParticipantAvailability {
 
     @Nullable
     @JsonProperty(value = "availabilities")
     private List<Availability> availabilities;
 
     @JsonCreator
-    public ParticipantAvailability(@JsonProperty(value = "availabilities") @Nullable List<Availability> availabilities) {
+    public InterviewParticipantAvailability(@JsonProperty(value = "availabilities") @Nullable List<Availability> availabilities) {
         this.availabilities = availabilities;
     }
 }

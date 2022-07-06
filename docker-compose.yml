@@ -1,15 +1,6 @@
 version: '3.1'
 
 services:
-  database:
-    container_name: 'h2'
-    hostname: 'h2'
-    image: 1000kit/h2
-    ports:
-      - "8181:8181"
-      - "1521:1521"
-    volumes:
-      - h2-data:/opt/h2-data
   app:
     image: interview-calendar-app
     build:
@@ -19,5 +10,3 @@ services:
       - .:/web
     ports:
       - "8080:8080"
-    depends_on:
-      - database

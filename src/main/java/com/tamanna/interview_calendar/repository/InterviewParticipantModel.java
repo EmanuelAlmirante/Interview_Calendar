@@ -2,11 +2,9 @@ package com.tamanna.interview_calendar.repository;
 
 import com.tamanna.interview_calendar.common.Role;
 import java.io.Serializable;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,6 +28,6 @@ public class InterviewParticipantModel implements Serializable {
     @Column(name = "role")
     private Role role;
 
-    @OneToOne(mappedBy = "interviewParticipant", orphanRemoval = true, cascade = CascadeType.ALL)
-    private ParticipantAvailabilityModel participantAvailability;
+    @Column(name = "interview_participant_availability", length = 1000000000)
+    private InterviewParticipantAvailabilityModel interviewParticipantAvailability;
 }

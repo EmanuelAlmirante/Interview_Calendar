@@ -1,21 +1,27 @@
 package com.tamanna.interview_calendar.service;
 
+import com.tamanna.interview_calendar.common.Role;
 import com.tamanna.interview_calendar.domain.Availability;
 import com.tamanna.interview_calendar.domain.InterviewParticipant;
-import com.tamanna.interview_calendar.domain.ParticipantAvailability;
+import com.tamanna.interview_calendar.domain.InterviewParticipantAvailability;
 import com.tamanna.interview_calendar.domain.TimeSlot;
+import com.tamanna.interview_calendar.domain.response.CommonTimeSlotsResponse;
 import com.tamanna.interview_calendar.exception.BusinessException;
 import com.tamanna.interview_calendar.repository.AvailabilityModel;
+import com.tamanna.interview_calendar.repository.InterviewParticipantAvailabilityModel;
 import com.tamanna.interview_calendar.repository.InterviewParticipantModel;
-import com.tamanna.interview_calendar.repository.ParticipantAvailabilityModel;
+import com.tamanna.interview_calendar.repository.InterviewRepository;
 import com.tamanna.interview_calendar.repository.TimeSlotModel;
-import com.tamanna.interview_calendar.repository.interview.InterviewRepository;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -38,22 +44,13 @@ public class InterviewService {
     public InterviewParticipant createParticipant(@Nonnull InterviewParticipant interviewParticipant) {
 
         isAvailabilityValid(interviewParticipant);
+        verifyIfParticipantAlreadyExists(interviewParticipant);
+        sortAvailabilitiesByFrom(interviewParticipant);
 
         InterviewParticipantModel interviewParticipantModel = mapper.map(interviewParticipant, InterviewParticipantModel.class);
-        ParticipantAvailability participantAvailability = interviewParticipant.getParticipantAvailability();
+        interviewRepository.save(interviewParticipantModel);
 
-        if (participantAvailability != null) {
-            ParticipantAvailabilityModel participantAvailabilityModel = mapper.map(participantAvailability, ParticipantAvailabilityModel.class);
-            participantAvailabilityModel.setInterviewParticipant(interviewParticipantModel);
-            interviewParticipantModel.setParticipantAvailability(participantAvailabilityModel);
-        }
-
-        try {
-            interviewRepository.save(interviewParticipantModel);
-            return interviewParticipant;
-        } catch (Exception exception) {
-            throw new BusinessException("Participant with name " + interviewParticipant.getName() + " already exists.");
-        }
+        return interviewParticipant;
     }
 
     @Nonnull
@@ -88,28 +85,28 @@ public class InterviewService {
     }
 
     @Nullable
-    public ParticipantAvailability getInterviewParticipantAvailability(@Nonnull String name) {
+    public InterviewParticipantAvailability getInterviewParticipantAvailability(@Nonnull String name) {
 
         InterviewParticipantModel interviewParticipant = interviewRepository.findById(name).orElse(null);
 
         if (interviewParticipant != null) {
-            ParticipantAvailabilityModel participantAvailability = interviewParticipant.getParticipantAvailability();
+            InterviewParticipantAvailabilityModel participantAvailability = interviewParticipant.getInterviewParticipantAvailability();
 
-            return participantAvailability == null ? new ParticipantAvailability()
-                                                   : mapper.map(participantAvailability, ParticipantAvailability.class);
+            return participantAvailability == null ? new InterviewParticipantAvailability()
+                                                   : mapper.map(participantAvailability, InterviewParticipantAvailability.class);
         }
 
         throw new BusinessException("No participant with name " + name + " found.");
     }
 
     @Nonnull
-    public ParticipantAvailability updateInterviewParticipantAvailability(@Nonnull String name, @Nonnull Availability availability) {
+    public InterviewParticipantAvailability updateInterviewParticipantAvailability(@Nonnull String name, @Nonnull Availability availability) {
 
         InterviewParticipantModel interviewParticipant = interviewRepository.findById(name).orElse(null);
 
         if (interviewParticipant != null) {
-            ParticipantAvailabilityModel participantAvailability = interviewParticipant.getParticipantAvailability() == null ?
-                                                                   null : interviewParticipant.getParticipantAvailability();
+            InterviewParticipantAvailabilityModel participantAvailability = interviewParticipant.getInterviewParticipantAvailability() == null ?
+                                                                            null : interviewParticipant.getInterviewParticipantAvailability();
 
             if (participantAvailability != null) {
                 AvailabilityModel toBeAddedAvailability = mapper.map(availability, AvailabilityModel.class);
@@ -125,15 +122,16 @@ public class InterviewService {
                 existingAvailabilities.add(toBeAddedAvailability);
                 participantAvailability.setAvailabilities(existingAvailabilities);
             } else {
-                participantAvailability = new ParticipantAvailabilityModel();
+                participantAvailability = new InterviewParticipantAvailabilityModel();
                 AvailabilityModel toBeAddedAvailability = mapper.map(availability, AvailabilityModel.class);
                 participantAvailability.setAvailabilities(List.of(toBeAddedAvailability));
             }
 
-            interviewParticipant.setParticipantAvailability(participantAvailability);
+            isAvailabilityValid(mapper.map(participantAvailability, InterviewParticipant.class));
+            interviewParticipant.setInterviewParticipantAvailability(participantAvailability);
             interviewRepository.save(interviewParticipant);
 
-            return mapper.map(participantAvailability, ParticipantAvailability.class);
+            return mapper.map(participantAvailability, InterviewParticipantAvailability.class);
         }
 
         throw new BusinessException("No participant with name " + name + " found.");
@@ -144,8 +142,9 @@ public class InterviewService {
         InterviewParticipantModel interviewParticipant = interviewRepository.findById(name).orElse(null);
 
         if (interviewParticipant != null) {
-            ParticipantAvailabilityModel existingParticipantAvailability = interviewParticipant.getParticipantAvailability() == null ?
-                                                                           null : interviewParticipant.getParticipantAvailability();
+            InterviewParticipantAvailabilityModel existingParticipantAvailability =
+                interviewParticipant.getInterviewParticipantAvailability() == null ?
+                null : interviewParticipant.getInterviewParticipantAvailability();
 
             if (existingParticipantAvailability != null) {
                 List<AvailabilityModel> existingAvailabilities = existingParticipantAvailability.getAvailabilities();
@@ -166,19 +165,90 @@ public class InterviewService {
                 existingAvailabilities = existingAvailabilities.stream().filter(availabilityModel -> !availabilityModel.getTimeSlots().isEmpty())
                                                                .collect(Collectors.toList());
                 existingParticipantAvailability.setAvailabilities(existingAvailabilities);
-                interviewParticipant.setParticipantAvailability(existingParticipantAvailability);
+                interviewParticipant.setInterviewParticipantAvailability(existingParticipantAvailability);
 
                 interviewRepository.save(interviewParticipant);
             }
         }
     }
 
+    @Nullable
+    public CommonTimeSlotsResponse getCommonTimeSlotsCandidateAndInterviewers(@Nonnull String candidateName,
+                                                                              @Nonnull List<String> interviewersNames) {
+
+        List<Availability> candidateAvailabilities = getCandidateAvailabilities(candidateName);
+        List<Availability> interviewersAvailabilities = getInterviewersAvailabilities(interviewersNames);
+
+        List<Availability> commonAvailabilities = new ArrayList<>();
+
+        for (Availability candidateAvailability : candidateAvailabilities) {
+            Set<TimeSlot> overlappingTimeSlots = new HashSet<>();
+            LocalDate candidateAvailabilityDay = candidateAvailability.getDay();
+            List<TimeSlot> candidateTimeSlots = candidateAvailability.getTimeSlots();
+
+            for (Availability interviewersAvailability : interviewersAvailabilities) {
+                LocalDate interviewerAvailabilityDay = interviewersAvailability.getDay();
+                List<TimeSlot> interviewerTimeSlots = interviewersAvailability.getTimeSlots();
+
+                if (candidateAvailabilityDay.equals(interviewerAvailabilityDay)) {
+                    for (TimeSlot candidateTimeSlot : candidateTimeSlots) {
+                        for (TimeSlot interviewerTimeSlot : interviewerTimeSlots) {
+                            if (candidateTimeSlot.overlaps(interviewerTimeSlot)) {
+                                TimeSlot overlappingTimeSlot = computeOverlappingTimeSlot(candidateTimeSlot, interviewerTimeSlot);
+
+                                if (overlappingTimeSlot != null) {
+                                    overlappingTimeSlots.add(overlappingTimeSlot);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!overlappingTimeSlots.isEmpty()) {
+                if (!commonAvailabilities.isEmpty()) {
+                    for (Availability commonAvailability : commonAvailabilities) {
+                        if (commonAvailability.getDay().equals(candidateAvailabilityDay)) {
+                            commonAvailability.getTimeSlots().addAll(overlappingTimeSlots);
+                        }
+                    }
+                } else {
+                    Availability commonAvailability = new Availability(candidateAvailabilityDay, new ArrayList<>(overlappingTimeSlots));
+                    commonAvailabilities.add(commonAvailability);
+                }
+            }
+        }
+
+        return new CommonTimeSlotsResponse(candidateName, interviewersNames, commonAvailabilities);
+    }
+
+    private void verifyIfParticipantAlreadyExists(@Nonnull InterviewParticipant interviewParticipant) {
+
+        String name = interviewParticipant.getName();
+        InterviewParticipantModel interviewParticipantModel = interviewRepository.findById(name).orElse(null);
+
+        if (interviewParticipantModel != null) {
+            throw new BusinessException("Participant with name " + interviewParticipant.getName() + " already exists.");
+        }
+    }
+
+    private void sortAvailabilitiesByFrom(@Nonnull InterviewParticipant interviewParticipant) {
+
+        List<Availability> availabilities = interviewParticipant.getInterviewParticipantAvailability().getAvailabilities();
+
+        for (Availability availability : availabilities) {
+            List<TimeSlot> timeSlots = availability.getTimeSlots();
+
+            timeSlots.sort(Comparator.comparing(TimeSlot::getFrom));
+        }
+    }
+
     private void isAvailabilityValid(@Nonnull InterviewParticipant interviewParticipant) {
 
-        ParticipantAvailability participantAvailability = interviewParticipant.getParticipantAvailability();
+        InterviewParticipantAvailability interviewParticipantAvailability = interviewParticipant.getInterviewParticipantAvailability();
 
-        if (participantAvailability != null) {
-            List<Availability> availabilities = participantAvailability.getAvailabilities();
+        if (interviewParticipantAvailability != null) {
+            List<Availability> availabilities = interviewParticipantAvailability.getAvailabilities();
 
             for (Availability availability : availabilities) {
                 List<TimeSlot> timeSlots = availability.getTimeSlots();
@@ -188,5 +258,88 @@ public class InterviewService {
                 }
             }
         }
+    }
+
+    private void isCandidateValid(@Nonnull String candidateName, @Nullable InterviewParticipantModel candidate) {
+
+        if (candidate == null) {
+            throw new BusinessException("No candidate with name " + candidateName + " found.");
+        }
+
+        if (candidate.getRole() != Role.CANDIDATE) {
+            throw new BusinessException("Participant with name " + candidateName + " does not have a candidate role.");
+        }
+    }
+
+    @Nonnull
+    private List<Availability> getCandidateAvailabilities(@Nonnull String candidateName) {
+
+        InterviewParticipantModel candidate = interviewRepository.findById(candidateName).orElse(null);
+        isCandidateValid(candidateName, candidate);
+        InterviewParticipant domainCandidate = mapper.map(candidate, InterviewParticipant.class);
+
+        return domainCandidate.getInterviewParticipantAvailability().getAvailabilities();
+    }
+
+    @Nonnull
+    private List<Availability> getInterviewersAvailabilities(@Nonnull List<String> interviewersNames) {
+
+        List<Availability> interviewersAvailabilities = new ArrayList<>();
+
+        for (String interviewerName : interviewersNames) {
+            InterviewParticipantModel interviewer = interviewRepository.findById(interviewerName).orElse(null);
+            isInterviewerValid(interviewerName, interviewer);
+
+            InterviewParticipant domainInterviewer = mapper.map(interviewer, InterviewParticipant.class);
+            List<Availability> interviewerAvailabilities = domainInterviewer.getInterviewParticipantAvailability().getAvailabilities();
+            interviewersAvailabilities.addAll(interviewerAvailabilities);
+        }
+
+        return interviewersAvailabilities;
+    }
+
+    private void isInterviewerValid(@Nonnull String interviewerName, @Nullable InterviewParticipantModel interviewer) {
+
+        if (interviewer == null) {
+            throw new BusinessException("No interviewer with name " + interviewerName + " found.");
+        }
+
+        if (interviewer.getRole() != Role.INTERVIEWER) {
+            throw new BusinessException("Participant with name " + interviewerName + " does not have an interviewer role.");
+        }
+    }
+
+    @Nonnull
+    private TimeSlot computeOverlappingTimeSlot(@Nonnull TimeSlot candidateTimeSlot, @Nonnull TimeSlot interviewerTimeSlot) {
+
+        TimeSlot overlappingTimeSlot = null;
+        LocalTime overlappingFrom;
+        LocalTime overlappingTo;
+
+        LocalTime candidateFrom = candidateTimeSlot.getFrom();
+        LocalTime candidateTo = candidateTimeSlot.getTo();
+        LocalTime interviewerFrom = interviewerTimeSlot.getFrom();
+        LocalTime interviewerTo = interviewerTimeSlot.getTo();
+
+        if (candidateFrom.isBefore(interviewerTo) && interviewerFrom.isBefore(candidateTo)) {
+            overlappingTimeSlot = new TimeSlot();
+
+            if (candidateFrom.isBefore(interviewerFrom)) {
+                overlappingFrom = interviewerFrom;
+            } else {
+                overlappingFrom = candidateFrom;
+            }
+
+            if (candidateTo.isBefore(interviewerTo)) {
+                overlappingTo = candidateTo;
+            } else {
+                overlappingTo = interviewerTo;
+            }
+
+            overlappingTimeSlot.setFrom(overlappingFrom);
+            overlappingTimeSlot.setTo(overlappingTo);
+        }
+
+        return overlappingTimeSlot;
     }
 }

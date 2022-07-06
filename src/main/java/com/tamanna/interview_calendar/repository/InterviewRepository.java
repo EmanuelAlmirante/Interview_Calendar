@@ -1,4 +1,4 @@
-package com.tamanna.interview_calendar.repository.interview;
+package com.tamanna.interview_calendar.repository;
 
 import com.tamanna.interview_calendar.repository.InterviewParticipantModel;
 import org.springframework.data.jpa.repository.JpaRepository;

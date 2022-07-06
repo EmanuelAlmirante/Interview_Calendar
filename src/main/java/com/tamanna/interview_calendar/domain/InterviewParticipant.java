@@ -26,14 +26,14 @@ public class InterviewParticipant {
 
     @Nullable
     @JsonProperty(value = "participant_availability")
-    private ParticipantAvailability participantAvailability;
+    private InterviewParticipantAvailability interviewParticipantAvailability;
 
     @JsonCreator
     public InterviewParticipant(@JsonProperty(value = "name") @Nonnull String name,
                                 @JsonProperty(value = "role") @Nonnull Role role,
-                                @JsonProperty(value = "participant_availability") @Nullable ParticipantAvailability participantAvailability) {
+                                @JsonProperty(value = "participant_availability") @Nullable InterviewParticipantAvailability interviewParticipantAvailability) {
         this.name = name;
         this.role = role;
-        this.participantAvailability = participantAvailability;
+        this.interviewParticipantAvailability = interviewParticipantAvailability;
     }
 }

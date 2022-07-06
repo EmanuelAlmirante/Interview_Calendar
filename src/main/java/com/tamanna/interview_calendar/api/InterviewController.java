@@ -2,7 +2,8 @@ package com.tamanna.interview_calendar.api;
 
 import com.tamanna.interview_calendar.domain.Availability;
 import com.tamanna.interview_calendar.domain.InterviewParticipant;
-import com.tamanna.interview_calendar.domain.ParticipantAvailability;
+import com.tamanna.interview_calendar.domain.InterviewParticipantAvailability;
+import com.tamanna.interview_calendar.domain.response.CommonTimeSlotsResponse;
 import com.tamanna.interview_calendar.service.InterviewService;
 import jakarta.annotation.Nonnull;
 import java.util.List;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -58,15 +60,15 @@ public class InterviewController {
 
     @GetMapping("/participants/{name}/availabilities")
     @ResponseStatus(HttpStatus.OK)
-    public ParticipantAvailability getInterviewParticipantAvailability(@PathVariable @Nonnull String name) {
+    public InterviewParticipantAvailability getInterviewParticipantAvailability(@PathVariable @Nonnull String name) {
 
         return interviewService.getInterviewParticipantAvailability(name);
     }
 
     @PutMapping("/participants/{name}/availabilities")
     @ResponseStatus(HttpStatus.OK)
-    public ParticipantAvailability updateInterviewParticipantAvailability(@PathVariable @Nonnull String name,
-                                                                          @RequestBody @Valid @Nonnull Availability availability) {
+    public InterviewParticipantAvailability updateInterviewParticipantAvailability(@PathVariable @Nonnull String name,
+                                                                                   @RequestBody @Valid @Nonnull Availability availability) {
 
         return interviewService.updateInterviewParticipantAvailability(name, availability);
     }
@@ -77,5 +79,13 @@ public class InterviewController {
                                                        @RequestBody @Valid @Nonnull Availability availability) {
 
         interviewService.deleteInterviewParticipantAvailability(name, availability);
+    }
+
+    @GetMapping("/common-slots")
+    @ResponseStatus(HttpStatus.OK)
+    public CommonTimeSlotsResponse getCommonTimeSlotsCandidateAndInterviewers(@RequestParam(value = "candidate_name", required = true) @Nonnull String candidateName,
+                                                                              @RequestParam(value = "interviewer_name", required = true) @Nonnull List<String> interviewersNames) {
+
+        return interviewService.getCommonTimeSlotsCandidateAndInterviewers(candidateName, interviewersNames);
     }
 }
