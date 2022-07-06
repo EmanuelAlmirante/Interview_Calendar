@@ -6,6 +6,10 @@ Although the application fulfills the requirements, the code could be refactored
 
 Regarding the tests, I decided to only implement unit tests and not integration tests due to the fact that the application does not need to be production ready.
 
+### Necessary Tools:
+
+You will need to install **Intellij IDEA** (https://www.jetbrains.com/idea/download/#section=linux), **Docker** (https://docs.docker.com/get-docker/), **Postman** (https://www.postman.com/downloads/), and **Java 17** (Windows - https://docs.oracle.com/en/java/javase/17/install/installation-jdk-microsoft-windows-platforms.html | Ubuntu 20.04 - https://www.linuxcapable.com/how-to-install-java-17-lts-jdk-17-on-ubuntu-20-04/ | MacOS - https://java.tutorials24x7.com/blog/how-to-install-java-17-on-mac). 
+
 ### Tech Stack:
 
 - Java 17
