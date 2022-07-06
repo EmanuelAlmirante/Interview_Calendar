@@ -178,46 +178,7 @@ public class InterviewService {
 
         List<Availability> candidateAvailabilities = getCandidateAvailabilities(candidateName);
         List<Availability> interviewersAvailabilities = getInterviewersAvailabilities(interviewersNames);
-
-        List<Availability> commonAvailabilities = new ArrayList<>();
-
-        for (Availability candidateAvailability : candidateAvailabilities) {
-            Set<TimeSlot> overlappingTimeSlots = new HashSet<>();
-            LocalDate candidateAvailabilityDay = candidateAvailability.getDay();
-            List<TimeSlot> candidateTimeSlots = candidateAvailability.getTimeSlots();
-
-            for (Availability interviewersAvailability : interviewersAvailabilities) {
-                LocalDate interviewerAvailabilityDay = interviewersAvailability.getDay();
-                List<TimeSlot> interviewerTimeSlots = interviewersAvailability.getTimeSlots();
-
-                if (candidateAvailabilityDay.equals(interviewerAvailabilityDay)) {
-                    for (TimeSlot candidateTimeSlot : candidateTimeSlots) {
-                        for (TimeSlot interviewerTimeSlot : interviewerTimeSlots) {
-                            if (candidateTimeSlot.overlaps(interviewerTimeSlot)) {
-                                TimeSlot overlappingTimeSlot = computeOverlappingTimeSlot(candidateTimeSlot, interviewerTimeSlot);
-
-                                if (overlappingTimeSlot != null) {
-                                    overlappingTimeSlots.add(overlappingTimeSlot);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if (!overlappingTimeSlots.isEmpty()) {
-                if (!commonAvailabilities.isEmpty()) {
-                    for (Availability commonAvailability : commonAvailabilities) {
-                        if (commonAvailability.getDay().equals(candidateAvailabilityDay)) {
-                            commonAvailability.getTimeSlots().addAll(overlappingTimeSlots);
-                        }
-                    }
-                } else {
-                    Availability commonAvailability = new Availability(candidateAvailabilityDay, new ArrayList<>(overlappingTimeSlots));
-                    commonAvailabilities.add(commonAvailability);
-                }
-            }
-        }
+        List<Availability> commonAvailabilities = computeCommonAvailabilities(candidateAvailabilities, interviewersAvailabilities);
 
         return new CommonTimeSlotsResponse(candidateName, interviewersNames, commonAvailabilities);
     }
@@ -309,6 +270,40 @@ public class InterviewService {
         }
     }
 
+    private List<Availability> computeCommonAvailabilities(@Nonnull List<Availability> candidateAvailabilities, @Nonnull List<Availability> interviewersAvailabilities) {
+
+        List<Availability> commonAvailabilities = new ArrayList<>();
+
+        for (Availability candidateAvailability : candidateAvailabilities) {
+            Set<TimeSlot> overlappingTimeSlots = new HashSet<>();
+            LocalDate candidateAvailabilityDay = candidateAvailability.getDay();
+            List<TimeSlot> candidateTimeSlots = candidateAvailability.getTimeSlots();
+
+            for (Availability interviewersAvailability : interviewersAvailabilities) {
+                LocalDate interviewerAvailabilityDay = interviewersAvailability.getDay();
+                List<TimeSlot> interviewerTimeSlots = interviewersAvailability.getTimeSlots();
+
+                if (candidateAvailabilityDay.equals(interviewerAvailabilityDay)) {
+                    for (TimeSlot candidateTimeSlot : candidateTimeSlots) {
+                        for (TimeSlot interviewerTimeSlot : interviewerTimeSlots) {
+                            if (candidateTimeSlot.overlaps(interviewerTimeSlot)) {
+                                TimeSlot overlappingTimeSlot = computeOverlappingTimeSlot(candidateTimeSlot, interviewerTimeSlot);
+
+                                if (overlappingTimeSlot != null) {
+                                    overlappingTimeSlots.add(overlappingTimeSlot);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            mergeSameDayCommonTimeSlots(commonAvailabilities, overlappingTimeSlots, candidateAvailabilityDay);
+        }
+
+        return commonAvailabilities;
+    }
+
     @Nonnull
     private TimeSlot computeOverlappingTimeSlot(@Nonnull TimeSlot candidateTimeSlot, @Nonnull TimeSlot interviewerTimeSlot) {
 
@@ -341,5 +336,21 @@ public class InterviewService {
         }
 
         return overlappingTimeSlot;
+    }
+
+    private void mergeSameDayCommonTimeSlots(@Nonnull List<Availability> commonAvailabilities, @Nonnull  Set<TimeSlot> overlappingTimeSlots, @Nonnull LocalDate day) {
+
+        if (!overlappingTimeSlots.isEmpty()) {
+            if (!commonAvailabilities.isEmpty()) {
+                for (Availability commonAvailability : commonAvailabilities) {
+                    if (commonAvailability.getDay().equals(day)) {
+                        commonAvailability.getTimeSlots().addAll(overlappingTimeSlots);
+                    }
+                }
+            } else {
+                Availability commonAvailability = new Availability(day, new ArrayList<>(overlappingTimeSlots));
+                commonAvailabilities.add(commonAvailability);
+            }
+        }
     }
 }
