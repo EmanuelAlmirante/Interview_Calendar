@@ -2,9 +2,11 @@
 
 This application is an interview calendar API. It implements endpoints to create candidates and interviewers, to create their availability slots, query for common availability slots between candidate and interviewers, among others.
 
-Although the application fulfills the requirements, the code could be refactored to be more optimised and clean. This was not done due to time restrictions. In a professional scenario I would also implement logging throughout the code, in order to better monitor what was happening. 
+The application does not fulfill the requirements, since it only works well for one candidate and one interviewer. If there are more interviewers then the application will return in some cases the wrong common time slots. Due to time restrictions, I was not able to find an algorithm that allowed me to compute the common time slots between two or more participants (candidate and one or more interviewers). I am pretty sure that with some more time I would be able to do it.
 
-Regarding the tests, I decided to only implement unit tests and not integration tests due to the fact that the application does not need to be production ready.
+Other considerations about the implementation: the code could be refactored to be more optimised and clean, which was also not done due to time restrictions. In a professional scenario I would also implement logging throughout the code, in order to better monitor what was happening. I would also use a yml file instead of a _application.properties_ file. 
+
+Regarding the tests, I decided to only implement unit tests due to the fact that the application does not need to be production ready. I focused mainly in testing the creation of participants and in the computation of the common time slots, because these are the most important methods and the ones with more business logic. I also did not test exhaustively for all the use cases, so it is very probably that some edge cases will make the application return the wrong result or fail. For a production ready environment I would also do integration and end-to-end tests, to guarantee that the system was working corretly in every aspect.
 
 ### Necessary Tools:
 
