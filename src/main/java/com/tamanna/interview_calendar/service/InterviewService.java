@@ -12,8 +12,10 @@ import com.tamanna.interview_calendar.repository.InterviewParticipantAvailabilit
 import com.tamanna.interview_calendar.repository.InterviewParticipantModel;
 import com.tamanna.interview_calendar.repository.InterviewRepository;
 import com.tamanna.interview_calendar.repository.TimeSlotModel;
+
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -179,6 +182,7 @@ public class InterviewService {
         List<Availability> candidateAvailabilities = getCandidateAvailabilities(candidateName);
         List<Availability> interviewersAvailabilities = getInterviewersAvailabilities(interviewersNames);
         List<Availability> commonAvailabilities = computeCommonAvailabilities(candidateAvailabilities, interviewersAvailabilities);
+        commonAvailabilities.forEach(availability -> availability.getTimeSlots().sort(Comparator.comparing(TimeSlot::getFrom)));
 
         return new CommonTimeSlotsResponse(candidateName, interviewersNames, commonAvailabilities);
     }
@@ -195,12 +199,16 @@ public class InterviewService {
 
     private void sortAvailabilitiesByFrom(@Nonnull InterviewParticipant interviewParticipant) {
 
-        List<Availability> availabilities = interviewParticipant.getInterviewParticipantAvailability().getAvailabilities();
+        InterviewParticipantAvailability interviewParticipantAvailability = interviewParticipant.getInterviewParticipantAvailability();
 
-        for (Availability availability : availabilities) {
-            List<TimeSlot> timeSlots = availability.getTimeSlots();
+        if (interviewParticipantAvailability != null) {
+            List<Availability> availabilities = interviewParticipantAvailability.getAvailabilities();
 
-            timeSlots.sort(Comparator.comparing(TimeSlot::getFrom));
+            for (Availability availability : availabilities) {
+                List<TimeSlot> timeSlots = availability.getTimeSlots();
+
+                timeSlots.sort(Comparator.comparing(TimeSlot::getFrom));
+            }
         }
     }
 
@@ -221,6 +229,16 @@ public class InterviewService {
         }
     }
 
+    @Nonnull
+    private List<Availability> getCandidateAvailabilities(@Nonnull String candidateName) {
+
+        InterviewParticipantModel candidate = interviewRepository.findById(candidateName).orElse(null);
+        isCandidateValid(candidateName, candidate);
+        InterviewParticipant domainCandidate = mapper.map(candidate, InterviewParticipant.class);
+
+        return domainCandidate.getInterviewParticipantAvailability().getAvailabilities();
+    }
+
     private void isCandidateValid(@Nonnull String candidateName, @Nullable InterviewParticipantModel candidate) {
 
         if (candidate == null) {
@@ -230,16 +248,6 @@ public class InterviewService {
         if (candidate.getRole() != Role.CANDIDATE) {
             throw new BusinessException("Participant with name " + candidateName + " does not have a candidate role.");
         }
-    }
-
-    @Nonnull
-    private List<Availability> getCandidateAvailabilities(@Nonnull String candidateName) {
-
-        InterviewParticipantModel candidate = interviewRepository.findById(candidateName).orElse(null);
-        isCandidateValid(candidateName, candidate);
-        InterviewParticipant domainCandidate = mapper.map(candidate, InterviewParticipant.class);
-
-        return domainCandidate.getInterviewParticipantAvailability().getAvailabilities();
     }
 
     @Nonnull
@@ -270,7 +278,8 @@ public class InterviewService {
         }
     }
 
-    private List<Availability> computeCommonAvailabilities(@Nonnull List<Availability> candidateAvailabilities, @Nonnull List<Availability> interviewersAvailabilities) {
+    private List<Availability> computeCommonAvailabilities(@Nonnull List<Availability> candidateAvailabilities,
+                                                           @Nonnull List<Availability> interviewersAvailabilities) {
 
         List<Availability> commonAvailabilities = new ArrayList<>();
 
@@ -338,18 +347,24 @@ public class InterviewService {
         return overlappingTimeSlot;
     }
 
-    private void mergeSameDayCommonTimeSlots(@Nonnull List<Availability> commonAvailabilities, @Nonnull  Set<TimeSlot> overlappingTimeSlots, @Nonnull LocalDate day) {
+    private void mergeSameDayCommonTimeSlots(@Nonnull List<Availability> commonAvailabilities,
+                                             @Nonnull Set<TimeSlot> overlappingTimeSlots,
+                                             @Nonnull LocalDate day) {
 
         if (!overlappingTimeSlots.isEmpty()) {
             if (!commonAvailabilities.isEmpty()) {
                 for (Availability commonAvailability : commonAvailabilities) {
                     if (commonAvailability.getDay().equals(day)) {
                         commonAvailability.getTimeSlots().addAll(overlappingTimeSlots);
+                    } else {
+                        Availability newCommonAvailability = new Availability(day, new ArrayList<>(overlappingTimeSlots));
+                        commonAvailabilities.add(newCommonAvailability);
+                        break;
                     }
                 }
             } else {
-                Availability commonAvailability = new Availability(day, new ArrayList<>(overlappingTimeSlots));
-                commonAvailabilities.add(commonAvailability);
+                Availability newCommonAvailability = new Availability(day, new ArrayList<>(overlappingTimeSlots));
+                commonAvailabilities.add(newCommonAvailability);
             }
         }
     }

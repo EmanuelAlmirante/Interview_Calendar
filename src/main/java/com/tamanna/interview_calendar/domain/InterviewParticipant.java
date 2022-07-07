@@ -3,6 +3,7 @@ package com.tamanna.interview_calendar.domain;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tamanna.interview_calendar.common.Role;
+
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import lombok.Builder;

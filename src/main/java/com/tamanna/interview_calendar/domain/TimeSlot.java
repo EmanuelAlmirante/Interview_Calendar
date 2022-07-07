@@ -3,13 +3,15 @@ package com.tamanna.interview_calendar.domain;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.tamanna.interview_calendar.exception.BusinessException;
+
 import jakarta.annotation.Nullable;
-import java.time.LocalTime;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.time.LocalTime;
 
 @Getter
 @Setter

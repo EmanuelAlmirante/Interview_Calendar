@@ -5,9 +5,12 @@ import com.tamanna.interview_calendar.domain.InterviewParticipant;
 import com.tamanna.interview_calendar.domain.InterviewParticipantAvailability;
 import com.tamanna.interview_calendar.domain.response.CommonTimeSlotsResponse;
 import com.tamanna.interview_calendar.service.InterviewService;
+
 import jakarta.annotation.Nonnull;
-import java.util.List;
 import javax.validation.Valid;
+
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -83,8 +86,9 @@ public class InterviewController {
 
     @GetMapping("/common-slots")
     @ResponseStatus(HttpStatus.OK)
-    public CommonTimeSlotsResponse getCommonTimeSlotsCandidateAndInterviewers(@RequestParam(value = "candidate_name", required = true) @Nonnull String candidateName,
-                                                                              @RequestParam(value = "interviewer_name", required = true) @Nonnull List<String> interviewersNames) {
+    public CommonTimeSlotsResponse getCommonTimeSlotsCandidateAndInterviewers(
+        @RequestParam(value = "candidate_name", required = true) @Nonnull String candidateName,
+        @RequestParam(value = "interviewer_name", required = true) @Nonnull List<String> interviewersNames) {
 
         return interviewService.getCommonTimeSlotsCandidateAndInterviewers(candidateName, interviewersNames);
     }
